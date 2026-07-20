@@ -24,45 +24,63 @@ NICE_TO_HAVE_WEIGHT = 1
 
 # Generic recruiting-speak stripped out before literal-term matching, so a
 # keyword like "Experience with Kubernetes" doesn't match on the word
-# "experience" alone.
+# "experience" alone. Deliberately does NOT include words that are often
+# the meaningful, distinguishing part of a keyword (e.g. "design" is the
+# whole point of "Bachelor's degree in Design" or "design patterns") --
+# stripping those made the keyword match on whatever was left over.
 _STOPWORDS = {
     "experience", "experienced", "strong", "familiarity", "familiar",
     "understanding", "knowledge", "proficiency", "proficient", "deploying",
-    "deployment", "design", "years", "year", "with", "on", "of", "and",
+    "deployment", "years", "year", "with", "on", "of", "and",
     "or", "the", "a", "an", "in", "for", "to", "using", "skills", "plus",
 }
 
 # Common qualification abbreviations that resumes use in place of the
 # words a JD spells out (e.g. "B.Tech" instead of "Bachelor's degree").
-# These are narrow and specific on purpose -- a general fuzzy-match pass
-# over every keyword risks blurring meaningfully different terms (e.g.
-# "SQL" vs "NoSQL"), so this only expands well-known degree shorthand
-# rather than fuzzy-matching everything.
-_DEGREE_SYNONYMS = [
-    (re.compile(r"\bb\.?\s?tech\b", re.IGNORECASE), ["bachelor", "degree"]),
-    (re.compile(r"\bb\.?\s?e\.?\b", re.IGNORECASE), ["bachelor", "degree"]),
-    (re.compile(r"\bb\.?\s?sc\.?\b", re.IGNORECASE), ["bachelor", "degree"]),
-    (re.compile(r"\bb\.?\s?a\.?\b", re.IGNORECASE), ["bachelor", "degree"]),
-    (re.compile(r"\bm\.?\s?tech\b", re.IGNORECASE), ["master", "degree"]),
-    (re.compile(r"\bm\.?\s?e\.?\b", re.IGNORECASE), ["master", "degree"]),
-    (re.compile(r"\bm\.?\s?sc\.?\b", re.IGNORECASE), ["master", "degree"]),
-    (re.compile(r"\bmba\b", re.IGNORECASE), ["master", "degree"]),
-    (re.compile(r"\bph\.?\s?d\.?\b", re.IGNORECASE), ["doctorate", "degree"]),
-]
+_DEGREE_LEVEL_PATTERNS = {
+    "bachelor": [re.compile(p, re.IGNORECASE) for p in (r"\bb\.?\s?tech\b", r"\bb\.?\s?e\.?\b", r"\bb\.?\s?sc\.?\b", r"\bb\.?\s?a\.?\b", r"\bbachelor'?s?\b")],
+    "master": [re.compile(p, re.IGNORECASE) for p in (r"\bm\.?\s?tech\b", r"\bm\.?\s?e\.?\b", r"\bm\.?\s?sc\.?\b", r"\bmba\b", r"\bmaster'?s?\b")],
+    "doctorate": [re.compile(p, re.IGNORECASE) for p in (r"\bph\.?\s?d\.?\b", r"\bdoctorate\b")],
+}
+_DEGREE_KEYWORD_RE = re.compile(r"^(bachelor|master|doctorate)'?s?\s+degree(?:\s+in\s+(.+))?$", re.IGNORECASE)
 
 
-def _expand_degree_synonyms(resume_text_lower: str) -> str:
-    """Append implied words when a known degree abbreviation is present.
+def _degree_chunk_match(keyword: str, resume_text: str) -> bool | None:
+    """For a "<Level> degree [in <field>]" keyword, require the degree
+    level and the field words to co-occur on the *same resume line* --
+    not just appear anywhere in the whole document.
 
-    E.g. a resume with "B.Tech in Computer Science" gets "bachelor degree"
-    appended, so a JD keyword like "Bachelor's degree in Computer Science"
-    can literal-match even though the resume never spells "Bachelor" out.
+    Without this, a resume mentioning "B.E." anywhere and the word
+    "design" anywhere else (e.g. "design systems" in a work-experience
+    bullet) would wrongly satisfy "Bachelor's degree in Design", since
+    plain whole-document term matching doesn't care that those two
+    mentions have nothing to do with each other.
+
+    Splits on newlines only (not periods/bullets like the general
+    chunker) because degree abbreviations like "B.E." or "B.Tech."
+    contain periods -- splitting on those would sever the abbreviation
+    from the field name that follows it on the same line.
+
+    Returns None if `keyword` isn't a degree-requirement phrase at all,
+    so the caller falls back to plain literal matching.
     """
-    extra = []
-    for pattern, implied in _DEGREE_SYNONYMS:
-        if pattern.search(resume_text_lower):
-            extra.extend(implied)
-    return resume_text_lower + " " + " ".join(extra) if extra else resume_text_lower
+    m = _DEGREE_KEYWORD_RE.match(keyword.strip())
+    if not m:
+        return None
+
+    level_patterns = _DEGREE_LEVEL_PATTERNS.get(m.group(1).lower(), [])
+    field_terms = [
+        t for t in re.findall(r"[A-Za-z0-9]+", m.group(2) or "")
+        if t.lower() not in _STOPWORDS and len(t) > 1
+    ]
+
+    for line in resume_text.lower().splitlines():
+        if not any(p.search(line) for p in level_patterns):
+            continue
+        if not field_terms or all(re.search(rf"\b{re.escape(t.lower())}\b", line) for t in field_terms):
+            return True
+    return False
+
 
 _model: SentenceTransformer | None = None
 
@@ -121,7 +139,7 @@ def score_resume(
 
     sims = _cosine_sim_matrix(keyword_embeddings, chunk_embeddings)
     max_sims = sims.max(axis=1)
-    resume_text_lower = _expand_degree_synonyms(resume_text.lower())
+    resume_text_lower = resume_text.lower()
 
     matched, missing = [], []
     matched_weight = 0.0
@@ -130,7 +148,14 @@ def score_resume(
     for i, keyword in enumerate(all_keywords):
         weight = MUST_HAVE_WEIGHT if i < len(must_have) else NICE_TO_HAVE_WEIGHT
         total_weight += weight
-        if max_sims[i] >= threshold or _literal_match(keyword, resume_text_lower):
+
+        degree_result = _degree_chunk_match(keyword, resume_text)
+        is_match = (
+            degree_result if degree_result is not None
+            else (max_sims[i] >= threshold or _literal_match(keyword, resume_text_lower))
+        )
+
+        if is_match:
             matched.append(keyword)
             matched_weight += weight
         else:
