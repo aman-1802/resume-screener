@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Dashboard</h2>
+
+{% if not jds %}
+<div class="alert">No job descriptions saved yet. Add one on the <a href="{{ url_for('job_descriptions') }}">Job Descriptions</a> page first.</div>
+{% else %}
+
+<form method="get" action="{{ url_for('dashboard') }}" id="jd-select-form">
+    <label for="jd_id">Job description</label>
+    <select id="jd_id" name="jd_id" data-autosubmit>
+        {% for jd in jds %}
+        <option value="{{ jd.id }}" {{ 'selected' if jd.id == selected_jd.id else '' }}>{{ jd.role_title }} ({{ jd.created_at[:10] }})</option>
+        {% endfor %}
+    </select>
+</form>
+
+{% if selected_jd %}
+<details class="card">
+    <summary>Keywords for this role</summary>
+    <p><strong>Must-have:</strong>
+        {% for k in selected_jd.must_have %}<span class="keyword-tag">{{ k }}</span>{% else %}None{% endfor %}
+    </p>
+    <p><strong>Nice-to-have:</strong>
+        {% for k in selected_jd.nice_to_have %}<span class="keyword-tag">{{ k }}</span>{% else %}None{% endfor %}
+    </p>
+</details>
+
+<h3>Rankings</h3>
+{% if not results %}
+<div class="alert">No resumes screened yet for this role. Go to <a href="{{ url_for('upload_resumes', jd_id=selected_jd.id) }}">Upload Resumes</a> to screen candidates.</div>
+{% else %}
+
+<div class="results-columns">
+    <div class="col">
+        <table>
+            <thead>
+                <tr><th>Rank</th><th>Candidate</th><th>Score</th><th>Matched</th><th>Missing</th></tr>
+            </thead>
+            <tbody>
+                {% for r in results %}
+                <tr class="candidate-row {{ 'selected' if r.id == selected_candidate_id else '' }}"
+                    onclick="window.location='{{ url_for('dashboard', jd_id=selected_jd.id, candidate_id=r.id) }}'">
+                    <td>{{ loop.index }}</td>
+                    <td>{{ r.candidate_name }}</td>
+                    <td>
+                        {% set tier = 'low' if r.score < 50 else ('mid' if r.score <= 75 else 'high') %}
+                        <span class="score-badge {{ tier }}">{{ '%.1f' | format(r.score) }}</span>
+                    </td>
+                    <td>{{ r.matched_keywords | length }}</td>
+                    <td>{{ r.missing_keywords | length }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p style="margin-top: 14px;"><a href="{{ url_for('export_jd_csv', jd_id=selected_jd.id) }}">Export CSV</a></p>
+    </div>
+
+    <div class="col">
+        {% if selected_candidate %}
+        <h4>{{ selected_candidate.candidate_name }}</h4>
+        {% set tier = 'low' if selected_candidate.score < 50 else ('mid' if selected_candidate.score <= 75 else 'high') %}
+        <span class="score-badge {{ tier }}">{{ '%.1f' | format(selected_candidate.score) }}</span>
+
+        <p style="margin-top: 16px;"><strong>Matched keywords</strong></p>
+        <p>{% for k in selected_candidate.matched_keywords %}<span class="keyword-tag matched">{{ k }}</span>{% else %}None{% endfor %}</p>
+
+        <p><strong>Missing keywords</strong></p>
+        <p>{% for k in selected_candidate.missing_keywords %}<span class="keyword-tag missing">{{ k }}</span>{% else %}None{% endfor %}</p>
+
+        <iframe class="pdf-frame" src="{{ url_for('serve_resume', filename=selected_candidate.resume_filename) }}"></iframe>
+        {% else %}
+        <p class="caption">Select a candidate row to view their resume and keyword breakdown.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

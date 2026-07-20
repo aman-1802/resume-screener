@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Screening in progress</h2>
+<p class="caption">Screening resumes against <strong>{{ jd.role_title }}</strong>&hellip; this page updates itself, no need to refresh.</p>
+
+<div class="progress-track">
+    <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+</div>
+<p id="progress-label" class="caption">Starting&hellip;</p>
+
+<script>
+(function () {
+    const jobId = {{ job_id | tojson }};
+    const jdId = {{ jd.id | tojson }};
+
+    function poll() {
+        fetch(`/upload-resumes/progress/${jobId}.json`)
+            .then((r) => r.json())
+            .then((data) => {
+                if (data.status === "unknown") {
+                    document.getElementById("progress-label").textContent = "Job not found — it may have finished already.";
+                    return;
+                }
+                const pct = data.total ? Math.round((data.processed / data.total) * 100) : 100;
+                document.getElementById("progress-fill").style.width = pct + "%";
+                document.getElementById("progress-label").textContent =
+                    data.total ? `${data.processed} / ${data.total} resumes screened` : "No resumes to screen.";
+
+                if (data.status === "done") {
+                    window.location = `/upload-resumes?jd_id=${jdId}&uploaded=${data.total}`;
+                } else {
+                    setTimeout(poll, 500);
+                }
+            });
+    }
+    poll();
+})();
+</script>
+{% endblock %}

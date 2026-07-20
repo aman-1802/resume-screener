@@ -1,0 +1,313 @@
+/* Warm editorial theme: near-black + rust/terracotta accent (deliberately
+   avoiding the generic blue/indigo SaaS look), Newsreader for headings
+   (fits a tool built around reading documents) and Public Sans for body
+   and UI text. Score badges keep standard red/amber/green semantics since
+   that's an expected, legible convention, not a "generic" choice. */
+
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Public+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary: #9a3412;
+    --primary-dark: #7c2d12;
+    --primary-light: #fdf1ec;
+    --ink: #1c1917;
+    --muted: #78716c;
+    --bg: #fdfbf7;
+    --card-bg: #ffffff;
+    --border: #e7e2d6;
+    --success-bg: #ecfdf5;
+    --success-border: #10b981;
+    --success-text: #065f46;
+    --font-heading: "Newsreader", Georgia, serif;
+    --font-body: "Public Sans", -apple-system, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-body);
+    background-color: var(--bg);
+    color: var(--ink);
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #1c1917 0%, #292524 100%);
+    padding: 28px 18px;
+}
+
+.sidebar h1 {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-style: italic;
+    margin: 0 0 28px 0;
+    color: #ffffff;
+    letter-spacing: 0.3px;
+}
+
+.sidebar nav a {
+    display: block;
+    padding: 11px 14px;
+    margin-bottom: 8px;
+    color: #d6d3d1;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    transition: background-color 0.15s ease;
+}
+
+.sidebar nav a.active {
+    background-color: var(--primary);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.sidebar nav a:not(.active):hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.main {
+    flex: 1;
+    padding: 32px 40px;
+    max-width: 1200px;
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    color: var(--ink);
+    font-weight: 600;
+}
+
+a {
+    color: var(--primary);
+}
+
+hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+}
+
+.caption {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: -8px;
+    margin-bottom: 16px;
+}
+
+/* Buttons */
+button, input[type="submit"] {
+    font-family: var(--font-body);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 9px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(154, 52, 18, 0.3);
+}
+
+button:hover, input[type="submit"]:hover {
+    filter: brightness(1.1);
+}
+
+button:disabled {
+    background: #d6d3d1;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* Form elements */
+input[type="text"], input[type="file"], select, textarea {
+    font-family: var(--font-body);
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 9px;
+    width: 100%;
+    background-color: #ffffff;
+    color: var(--ink);
+}
+
+select {
+    cursor: pointer;
+}
+
+input[type="text"]:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    margin-top: 14px;
+    color: var(--ink);
+}
+
+/* Alert / info boxes */
+.alert {
+    background-color: var(--primary-light);
+    border-left: 4px solid var(--primary);
+    padding: 14px 16px;
+    border-radius: 4px;
+    margin: 14px 0;
+}
+
+.alert-success {
+    background-color: var(--success-bg);
+    border-left-color: var(--success-border);
+    color: var(--success-text);
+}
+
+/* Cards / expanders */
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(28, 25, 23, 0.06);
+}
+
+.card summary {
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    background-color: var(--card-bg);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(28, 25, 23, 0.06);
+}
+
+th, td {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 14px;
+}
+
+th {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+tr.candidate-row {
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+tr.candidate-row:nth-child(even) {
+    background-color: #faf8f4;
+}
+
+tr.candidate-row:hover {
+    background-color: var(--primary-light);
+}
+
+tr.candidate-row.selected {
+    background-color: #fce3d6;
+}
+
+/* Two-column dashboard results layout */
+.results-columns {
+    display: flex;
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.results-columns .col {
+    flex: 1;
+    min-width: 0;
+}
+
+.pdf-frame {
+    width: 100%;
+    height: 600px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-top: 16px;
+}
+
+/* Score badge — carries the strongest color since it's the key signal.
+   Standard red/amber/green semantics, kept distinct from the brand rust
+   accent above so a "mid" score never reads as a UI element. */
+.score-badge {
+    display: inline-block;
+    padding: 5px 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #ffffff;
+}
+
+.score-badge.low { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.score-badge.mid { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.score-badge.high { background: linear-gradient(135deg, #10b981, #047857); }
+
+.keyword-tag {
+    display: inline-block;
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+    border-radius: 12px;
+    padding: 3px 12px;
+    margin: 3px 4px 3px 0;
+    font-size: 13px;
+}
+
+.keyword-tag.matched {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.keyword-tag.missing {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.spinner-text {
+    font-style: italic;
+    color: var(--muted);
+}
+
+/* Screening progress bar */
+.progress-track {
+    width: 100%;
+    height: 14px;
+    background-color: var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+    margin-top: 16px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary) 0%, #c2591c 100%);
+    transition: width 0.3s ease;
+}

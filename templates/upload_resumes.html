@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Upload Resumes</h2>
+<p class="caption">Pick a job description, then upload resumes to screen against it. Each upload adds to that role's running candidate list on the Dashboard &mdash; nothing is overwritten.</p>
+
+{% if not jds %}
+<div class="alert">No job descriptions saved yet. Add one on the <a href="{{ url_for('job_descriptions') }}">Job Descriptions</a> page first.</div>
+{% else %}
+
+{% if uploaded_count is not none %}
+<div class="alert alert-success">
+    Screened {{ uploaded_count }} resume{{ '' if uploaded_count == 1 else 's' }} against
+    <strong>{{ selected_jd.role_title }}</strong>.
+    <a href="{{ url_for('dashboard', jd_id=selected_jd.id) }}">View results on the Dashboard &rarr;</a>
+</div>
+{% endif %}
+
+<form method="get" action="{{ url_for('upload_resumes') }}" id="jd-select-form">
+    <label for="jd_id">Job description to screen against</label>
+    <select id="jd_id" name="jd_id" data-autosubmit>
+        {% for jd in jds %}
+        <option value="{{ jd.id }}" {{ 'selected' if jd.id == selected_jd.id else '' }}>{{ jd.role_title }} ({{ jd.created_at[:10] }})</option>
+        {% endfor %}
+    </select>
+</form>
+
+{% if selected_jd %}
+<details class="card">
+    <summary>Keywords for this role</summary>
+    <p><strong>Must-have:</strong>
+        {% for k in selected_jd.must_have %}<span class="keyword-tag">{{ k }}</span>{% else %}None{% endfor %}
+    </p>
+    <p><strong>Nice-to-have:</strong>
+        {% for k in selected_jd.nice_to_have %}<span class="keyword-tag">{{ k }}</span>{% else %}None{% endfor %}
+    </p>
+</details>
+
+<div class="card">
+    <form method="post" action="{{ url_for('run_screening') }}" enctype="multipart/form-data">
+        <input type="hidden" name="jd_id" value="{{ selected_jd.id }}">
+        <label for="resume_files">Upload resume PDFs for this role</label>
+        <input type="file" id="resume_files" name="resume_files" accept="application/pdf" multiple required>
+        <div style="margin-top: 16px;">
+            <button type="submit">Run Screening</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Job Descriptions</h2>
+<p class="caption">Upload a JD once per role. Keywords are extracted automatically and reused for every resume batch you screen against it.</p>
+
+{% if error %}
+<div class="alert">{{ error }}</div>
+{% endif %}
+
+<details class="card" {{ 'open' if not jds else '' }}>
+    <summary>Add a new job description</summary>
+    <form method="post" action="{{ url_for('add_job_description') }}" enctype="multipart/form-data">
+        <label for="role_title">Role title</label>
+        <input type="text" id="role_title" name="role_title" placeholder="e.g. Senior Backend Engineer" required>
+
+        <label for="jd_file">Job description PDF</label>
+        <input type="file" id="jd_file" name="jd_file" accept="application/pdf" required>
+
+        <div style="margin-top: 16px;">
+            <button type="submit">Extract &amp; Save</button>
+        </div>
+    </form>
+</details>
+
+<h3>Saved job descriptions</h3>
+
+{% if not jds %}
+<div class="alert">No job descriptions yet. Add one above to get started.</div>
+{% endif %}
+
+{% for jd in jds %}
+<details class="card">
+    <summary>{{ jd.role_title }} &mdash; added {{ jd.created_at[:10] }}</summary>
+    <form method="post" action="{{ url_for('update_job_description_keywords', jd_id=jd.id) }}">
+        <label for="must_have_{{ jd.id }}">Must-have keywords (one per line)</label>
+        <textarea id="must_have_{{ jd.id }}" name="must_have" rows="6">{{ jd.must_have | join('\n') }}</textarea>
+
+        <label for="nice_to_have_{{ jd.id }}">Nice-to-have keywords (one per line)</label>
+        <textarea id="nice_to_have_{{ jd.id }}" name="nice_to_have" rows="5">{{ jd.nice_to_have | join('\n') }}</textarea>
+
+        <div style="margin-top: 16px;">
+            <button type="submit">Save changes</button>
+        </div>
+    </form>
+</details>
+{% endfor %}
+{% endblock %}

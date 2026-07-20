@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CV Screening Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <h1>CV Screening</h1>
+            <nav>
+                <a href="{{ url_for('job_descriptions') }}" class="{{ 'active' if active_page == 'job_descriptions' else '' }}">Job Descriptions</a>
+                <a href="{{ url_for('upload_resumes') }}" class="{{ 'active' if active_page == 'upload_resumes' else '' }}">Upload Resumes</a>
+                <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active_page == 'dashboard' else '' }}">Dashboard</a>
+            </nav>
+        </aside>
+        <main class="main">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
